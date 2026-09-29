@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizador de Estudos 3000</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Header Principal -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div>
+                <h1 class="app-title">Organizador de Estudos 3000</h1>
+                <span class="app-badge">Protótipo Interativo</span>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Buscar tarefas ou incômodos...">
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="viewToggleBtn" class="btn btn-secondary" title="Alternar Visualização">
+                <i class="fa-solid fa-table-columns"></i> <span>Quadro Kanban</span>
+            </button>
+            <button id="addCardBtn" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i> Novo Incômodo
+            </button>
+            <button id="addColumnBtn" class="btn btn-outline">
+                <i class="fa-solid fa-folder-plus"></i> Nova Categoria
+            </button>
+            <button id="themeToggleBtn" class="btn-theme" title="Alternar Tema">
+                <i class="fa-solid fa-sun icon-sun"></i>
+                <i class="fa-solid fa-moon icon-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Barra de Métricas Rápidas -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-label">Total de Registros:</span>
+            <span class="stat-value" id="totalCardsCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Categorias Ativas:</span>
+            <span class="stat-value" id="totalColsCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Desafios Superados:</span>
+            <span class="stat-value text-success" id="resolvedCardsCount">0</span>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal (Visões) -->
+    <main class="main-content">
+        <!-- Visualização 1: Quadro Kanban -->
+        <section id="kanbanView" class="view-section active">
+            <div class="kanban-board" id="kanbanBoard">
+                <!-- Colunas serão renderizadas via JS -->
+            </div>
+        </section>
+
+        <!-- Visualização 2: Lousa de Anotações e Desenhos Livres -->
+        <section id="whiteboardView" class="view-section">
+            <div class="whiteboard-toolbar">
+                <div class="tool-group">
+                    <button id="wbToolPencil" class="wb-tool active" title="Lápis"><i class="fa-solid fa-pen"></i></button>
+                    <button id="wbToolEraser" class="wb-tool" title="Borracha"><i class="fa-solid fa-eraser"></i></button>
+                    <input type="color" id="wbColorPicker" value="#6366f1" title="Cor do Lápis">
+                    <input type="range" id="wbBrushSize" min="2" max="30" value="4" title="Espessura">
+                </div>
+                <div class="tool-group">
+                    <button id="addStickyNoteBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-note-sticky"></i> + Lembrete</button>
+                    <button id="clearWbBtn" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Limpar Lousa</button>
+                </div>
+            </div>
+            <div class="whiteboard-container" id="whiteboardContainer">
+                <canvas id="globalCanvas"></canvas>
+                <!-- Notas Adesivas Dinâmicas -->
+                <div id="stickyNotesContainer"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Detalhes do Card / Editar Anotações e Desenho -->
+    <div class="modal-backdrop" id="cardDetailModal">
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <span class="card-tag-preview" id="modalTagPreview"></span>
+                    <h2 contenteditable="true" id="modalCardTitle" class="editable-title" title="Clique para editar o título">Título do Card</h2>
+                </div>
+                <button class="modal-close" id="closeDetailModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-tab="tab-notes"><i class="fa-solid fa-align-left"></i> Anotações & Estratégia</button>
+                <button class="tab-btn" data-tab="tab-draw"><i class="fa-solid fa-paint-brush"></i> Quadro de Desenho</button>
+                <button class="tab-btn" data-tab="tab-tasks"><i class="fa-solid fa-list-check"></i> Checklist</button>
+                <button class="tab-btn" data-tab="tab-style"><i class="fa-solid fa-palette"></i> Personalizar Cor</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab 1: Anotações -->
+                <div class="tab-content active" id="tab-notes">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-triangle-exclamation text-warning"></i> Qual é a dor ou incômodo real?</label>
+                        <textarea id="modalCardDescription" rows="4" placeholder="Descreva como isso afeta sua rotina de estudos..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-lightbulb text-success"></i> Solução / Estratégia Recomendada</label>
+                        <textarea id="modalCardSolution" rows="4" placeholder="Passos para contornar esse problema..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Quadro de Desenho Interno -->
+                <div class="tab-content" id="tab-draw">
+                    <div class="canvas-controls">
+                        <button id="cardToolPencil" class="wb-tool active" title="Lápis"><i class="fa-solid fa-pen"></i></button>
+                        <button id="cardToolEraser" class="wb-tool" title="Borracha"><i class="fa-solid fa-eraser"></i></button>
+                        <input type="color" id="cardCanvasColor" value="#6366f1">
+                        <input type="range" id="cardCanvasSize" min="2" max="20" value="4">
+                        <button id="clearCardCanvasBtn" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
+                    </div>
+                    <div class="card-canvas-wrapper">
+                        <canvas id="cardCanvas" width="600" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Checklist -->
+                <div class="tab-content" id="tab-tasks">
+                    <div class="checklist-input-group">
+                        <input type="text" id="newSubtaskInput" placeholder="Adicionar nova sub-tarefa...">
+                        <button id="addSubtaskBtn" class="btn btn-primary"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <ul class="checklist-items" id="modalChecklist"></ul>
+                </div>
+
+                <!-- Tab 4: Estilo e Cor -->
+                <div class="tab-content" id="tab-style">
+                    <label class="mb-2 block">Selecione a cor de destaque para este card:</label>
+                    <div class="color-picker-grid">
+                        <button class="color-opt" style="background: #ef4444;" data-color="#ef4444"></button>
+                        <button class="color-opt" style="background: #f59e0b;" data-color="#f59e0b"></button>
+                        <button class="color-opt" style="background: #10b981;" data-color="#10b981"></button>
+                        <button class="color-opt" style="background: #3b82f6;" data-color="#3b82f6"></button>
+                        <button class="color-opt" style="background: #6366f1;" data-color="#6366f1"></button>
+                        <button class="color-opt" style="background: #8b5cf6;" data-color="#8b5cf6"></button>
+                        <button class="color-opt" style="background: #ec4899;" data-color="#ec4899"></button>
+                        <button class="color-opt" style="background: #64748b;" data-color="#64748b"></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="deleteCardBtn"><i class="fa-solid fa-trash"></i> Excluir Card</button>
+                <button class="btn btn-primary" id="saveCardDetailBtn"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Criar Novo Card -->
+    <div class="modal-backdrop" id="newCardModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-plus-circle"></i> Novo Incômodo de Estudo</h2>
+                <button class="modal-close" id="closeNewCardModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Título do Desafio / Incômodo *</label>
+                    <input type="text" id="newCardTitle" placeholder="Ex: Procrastinação com redes sociais" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria Inicial</label>
+                    <select id="newCardCategory"></select>
+                </div>
+                <div class="form-group">
+                    <label>Descrição do Problema</label>
+                    <textarea id="newCardDesc" rows="3" placeholder="O que costuma acontecer e como atrapalha?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Cor do Card</label>
+                    <div class="color-picker-grid" id="newCardColorGrid">
+                        <button type="button" class="color-opt selected" style="background: #ef4444;" data-color="#ef4444"></button>
+                        <button type="button" class="color-opt" style="background: #f59e0b;" data-color="#f59e0b"></button>
+                        <button type="button" class="color-opt" style="background: #10b981;" data-color="#10b981"></button>
+                        <button type="button" class="color-opt" style="background: #3b82f6;" data-color="#3b82f6"></button>
+                        <button type="button" class="color-opt" style="background: #6366f1;" data-color="#6366f1"></button>
+                        <button type="button" class="color-opt" style="background: #8b5cf6;" data-color="#8b5cf6"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelNewCardBtn">Cancelar</button>
+                <button class="btn btn-primary" id="confirmNewCardBtn">Criar Incômodo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Criar Nova Categoria -->
+    <div class="modal-backdrop" id="newColumnModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-folder-plus"></i> Nova Categoria</h2>
+                <button class="modal-close" id="closeNewColModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome da Categoria *</label>
+                    <input type="text" id="newColTitle" placeholder="Ex: Revisões Pendentes, Ideias de Projetos..." required>
+                </div>
+                <div class="form-group">
+                    <label>Ícone Representativo</label>
+                    <select id="newColIcon">
+                        <option value="fa-list-check">📋 Lista de Tarefas</option>
+                        <option value="fa-brain">🧠 Mental / Foco</option>
+                        <option value="fa-clock">⏰ Tempo / Prazos</option>
+                        <option value="fa-book-open">📖 Leitura / Livros</option>
+                        <option value="fa-fire">🔥 Prioridade Alta</option>
+                        <option value="fa-lightbulb">💡 Ideias & Estratégias</option>
+                        <option value="fa-check-double">✅ Concluído</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelNewColBtn">Cancelar</button>
+                <button class="btn btn-primary" id="confirmNewColBtn">Criar Categoria</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
